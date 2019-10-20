@@ -1,0 +1,21 @@
+{
+  "name": "hpms_espruino",
+  "version": "1.0.0",
+  "description": "Run an particulate matter air quality monitor sensor via an ESP8266 using Espruino",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack --mode production",
+    "dev": "webpack --mode development"
+  },
+  "author": "parasquid",
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "@babel/core": "^7.6.4",
+    "@babel/preset-env": "^7.6.3",
+    "babel-loader": "^8.0.6",
+    "closure-webpack-plugin": "^2.0.1",
+    "google-closure-compiler": "^20190929.0.0",
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.9"
+  }
+}
