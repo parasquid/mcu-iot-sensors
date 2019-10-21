@@ -1,21 +1,6 @@
 /* eslint-disable no-console */
 
-const unpack = (str) => {
-  var bytes = [];
-  for(var i = 0; i < str.length; i++) {
-    var char = str.charCodeAt(i);
-    bytes.push(char);
-  }
-  return bytes;
-};
-
-const pack = (byteArray) => {
-  var str = "";
-  for(var i = 0; i < byteArray.length; i++) {
-    str += String.fromCharCode(byteArray[i]);
-  }
-  return str;
-};
+import {pack, unpack} from "./utils.js";
 
 // eslint-disable-next-line no-undef
 var s = new Serial();
