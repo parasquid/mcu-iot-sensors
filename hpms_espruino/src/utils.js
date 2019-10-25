@@ -1,16 +1,19 @@
 export const unpack = (string) => {
-  let bytes = [];
+  let byteArray = [];
+
   for(let i = 0; i < string.length; i++) {
-    let char = string.charCodeAt(i);
-    bytes.push(char);
+    byteArray.push(string.charCodeAt(i));
   }
-  return bytes;
+
+  return byteArray;
 };
 
 export const pack = (byteArray) => {
   let string = "";
+
   for(let i = 0; i < byteArray.length; i++) {
     string += String.fromCharCode(byteArray[i]);
   }
+
   return string;
 };

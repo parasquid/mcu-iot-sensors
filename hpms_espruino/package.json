@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Run an particulate matter air quality monitor sensor via an ESP8266 using Espruino",
   "scripts": {
-    "test": "jest",
+    "test": "jest --watch",
     "build": "webpack --mode production",
     "dev": "webpack --mode development"
   },
