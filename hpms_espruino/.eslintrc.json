@@ -1,7 +1,10 @@
 {
     "env": {
-        "browser": true,
-        "es6": true
+        "browser": false,
+        "es6": true,
+        "jest": true,
+        "amd": true,
+        "node": true
     },
     "extends": "eslint:recommended",
     "parserOptions": {
