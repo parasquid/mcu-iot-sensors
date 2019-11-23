@@ -1,5 +1,7 @@
 /* eslint-disable no-console */
 
+E.setClock(80);
+
 import {pack, unpack} from "./utils.js";
 
 // eslint-disable-next-line no-undef
