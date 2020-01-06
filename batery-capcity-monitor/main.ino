@@ -23,17 +23,20 @@ uint32_t lastPressed = 0;
 
 void setup()
 {
-  Serial.begin(9600);
+  setupDisplay();
   monitor.begin();
-  oled.begin();
-  oled.setFlipMode(1);
-  oled.setFont(u8x8_font_chroma48medium8_r);
   pinMode(transistorPin, OUTPUT);
   pinMode(buttonPin, INPUT);
 }
 
-void loop()
-{
+void setupDisplay() {
+  Serial.begin(9600);
+  oled.begin();
+  oled.setFlipMode(1);
+  oled.setFont(u8x8_font_chroma48medium8_r);
+}
+
+void loopDisplay(U8X8_SSD1306_128X64_NONAME_HW_I2C oled, INA219 monitor) {
   oled.setCursor(0,0);
   oled.print(millis());
 
@@ -57,6 +60,12 @@ void loop()
   oled.setCursor(8, 4); oled.print(monitor.busPower() * 1000, 2);
   oled.setCursor(13, 4); oled.print(" mW");
 
+  oled.setCursor(0,5);
+  oled.print(buttonState);
+}
+
+void loop()
+{
   buttonState = digitalRead(buttonPin);
   if (buttonState == HIGH) {
     if (millis() - lastPressed > 100) {
@@ -66,6 +75,5 @@ void loop()
     lastPressed = millis();
   }
 
-  oled.setCursor(0,5);
-  oled.print(buttonState);
+  loopDisplay(oled, monitor);
 }
