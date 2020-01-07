@@ -1,8 +1,12 @@
+#include <Arduino.h>
+
 #include <INA219.h>
 #include <U8x8lib.h>
 #include <Wire.h>
 #include <SPI.h>
 #include "SdFat.h"
+
+void setupDisplay();
 
 const uint8_t chipSelect = SS;
 const uint32_t SAMPLE_INTERVAL_MS = 1000;
