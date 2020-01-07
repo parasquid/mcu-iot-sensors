@@ -44,7 +44,7 @@ void setupDisplay() {
   Serial.begin(9600);
   oled.begin();
   oled.setFlipMode(1);
-  oled.setFont(u8x8_font_chroma48medium8_r);
+  oled.setFont(u8x8_font_pressstart2p_r);
 }
 
 void loopDisplay(U8X8_SSD1306_128X64_NONAME_HW_I2C oled, INA219 monitor) {
@@ -54,27 +54,30 @@ void loopDisplay(U8X8_SSD1306_128X64_NONAME_HW_I2C oled, INA219 monitor) {
   oled.setCursor(0,1);
   oled.print("sVolts:  ");
   oled.setCursor(8, 1); oled.print(monitor.shuntVoltage() * 1000, 2);
-  oled.setCursor(13, 1); oled.print("  V");
+  oled.setCursor(14, 1); oled.print(" V");
 
   oled.setCursor(0,2);
   oled.print("sAmps:  ");
   oled.setCursor(8, 2); oled.print(monitor.shuntCurrent() * 1000, 2);
-  oled.setCursor(13, 2); oled.print(" mA");
+  oled.setCursor(14, 2); oled.print("mA");
 
   oled.setCursor(0,3);
   oled.print("bVolts:  ");
   oled.setCursor(8, 3); oled.print(monitor.busVoltage(), 2);
-  oled.setCursor(13, 3); oled.print("  V");
+  oled.setCursor(14, 3); oled.print(" V");
 
   oled.setCursor(0,4);
   oled.print("bWatts: ");
   oled.setCursor(8, 4); oled.print(monitor.busPower() * 1000, 2);
-  oled.setCursor(13, 4); oled.print(" mW");
+  oled.setCursor(14, 4); oled.print("mW");
 
   oled.setCursor(0,5);
-  oled.print("button: "); oled.print(buttonState);
+  oled.print("sum mAh: ");
 
   oled.setCursor(0,6);
+  oled.print("button: "); oled.print(buttonState);
+
+  oled.setCursor(0,7);
   oled.print("switch: "); oled.print(swithState);
 }
 
@@ -90,4 +93,7 @@ void loop()
   }
 
   loopDisplay(oled, monitor);
+
+  monitor.recalibrate();
+  monitor.reconfig();
 }
