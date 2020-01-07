@@ -16,12 +16,17 @@ SdFile file;
 uint32_t logTime;
 
 INA219 monitor;
+#define R_SHUNT 0.00375
+#define V_SHUNT_MAX 0.075
+#define V_BUS_MAX 16
+#define I_MAX_EXPECTED 20
 
 U8X8_SSD1306_128X64_NONAME_HW_I2C oled(/* reset=*/ U8X8_PIN_NONE);
 
-const int transistorPin =  9;
+const int switchPin =  9;
 const int buttonPin = 7;
-int transistor = LOW;
+
+int swithState = LOW;
 int buttonState = LOW;
 uint32_t lastPressed = 0;
 
@@ -29,7 +34,9 @@ void setup()
 {
   setupDisplay();
   monitor.begin();
-  pinMode(transistorPin, OUTPUT);
+  monitor.configure(INA219::RANGE_16V, INA219::GAIN_2_80MV, INA219::ADC_16SAMP, INA219::ADC_16SAMP, INA219::CONT_SH_BUS);
+  monitor.calibrate(R_SHUNT, V_SHUNT_MAX, V_BUS_MAX, I_MAX_EXPECTED);
+  pinMode(switchPin, OUTPUT);
   pinMode(buttonPin, INPUT);
 }
 
@@ -65,7 +72,10 @@ void loopDisplay(U8X8_SSD1306_128X64_NONAME_HW_I2C oled, INA219 monitor) {
   oled.setCursor(13, 4); oled.print(" mW");
 
   oled.setCursor(0,5);
-  oled.print(buttonState);
+  oled.print("button: "); oled.print(buttonState);
+
+  oled.setCursor(0,6);
+  oled.print("switch: "); oled.print(swithState);
 }
 
 void loop()
@@ -73,8 +83,8 @@ void loop()
   buttonState = digitalRead(buttonPin);
   if (buttonState == HIGH) {
     if (millis() - lastPressed > 100) {
-      transistor = !transistor;
-      digitalWrite(transistorPin, transistor);
+      swithState = !swithState;
+      digitalWrite(switchPin, swithState);
     }
     lastPressed = millis();
   }
