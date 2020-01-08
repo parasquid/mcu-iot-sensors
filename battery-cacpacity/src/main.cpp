@@ -6,8 +6,6 @@
 #include <SPI.h>
 #include "SdFat.h"
 
-void setupDisplay();
-
 const uint8_t chipSelect = SS;
 const uint32_t SAMPLE_INTERVAL_MS = 1000;
 #define FILE_BASE_NAME "Data"
@@ -30,21 +28,17 @@ int swithState = LOW;
 int buttonState = LOW;
 uint32_t lastPressed = 0;
 
-void setup()
-{
-  setupDisplay();
-  monitor.begin();
-  monitor.configure(INA219::RANGE_16V, INA219::GAIN_2_80MV, INA219::ADC_16SAMP, INA219::ADC_16SAMP, INA219::CONT_SH_BUS);
-  monitor.calibrate(R_SHUNT, V_SHUNT_MAX, V_BUS_MAX, I_MAX_EXPECTED);
-  pinMode(switchPin, OUTPUT);
-  pinMode(buttonPin, INPUT);
-}
-
 void setupDisplay() {
   Serial.begin(9600);
   oled.begin();
   oled.setFlipMode(1);
   oled.setFont(u8x8_font_pressstart2p_r);
+}
+
+void setupMonitor() {
+  monitor.begin();
+  monitor.configure(INA219::RANGE_16V, INA219::GAIN_2_80MV, INA219::ADC_16SAMP, INA219::ADC_16SAMP, INA219::CONT_SH_BUS);
+  monitor.calibrate(R_SHUNT, V_SHUNT_MAX, V_BUS_MAX, I_MAX_EXPECTED);
 }
 
 void loopDisplay(U8X8_SSD1306_128X64_NONAME_HW_I2C oled, INA219 monitor) {
@@ -81,11 +75,23 @@ void loopDisplay(U8X8_SSD1306_128X64_NONAME_HW_I2C oled, INA219 monitor) {
   oled.print("switch: "); oled.print(swithState);
 }
 
-void loop()
-{
+void loopMonitor(INA219 monitor) {
+  monitor.recalibrate();
+  monitor.reconfig();
+}
+
+void setup() {
+  setupDisplay();
+  setupMonitor();
+  pinMode(switchPin, OUTPUT);
+  pinMode(buttonPin, INPUT);
+}
+
+#define DEBOUNCE_TIME_MS 100
+void loop() {
   buttonState = digitalRead(buttonPin);
   if (buttonState == HIGH) {
-    if (millis() - lastPressed > 100) {
+    if (millis() - lastPressed > DEBOUNCE_TIME_MS) {
       swithState = !swithState;
       digitalWrite(switchPin, swithState);
     }
@@ -93,7 +99,5 @@ void loop()
   }
 
   loopDisplay(oled, monitor);
-
-  monitor.recalibrate();
-  monitor.reconfig();
+  loopMonitor(monitor);
 }
