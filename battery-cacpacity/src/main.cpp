@@ -19,10 +19,17 @@ U8X8_SSD1306_128X64_NONAME_HW_I2C oled(/* reset=*/ U8X8_PIN_NONE);
 
 const int switchPin =  9;
 const int buttonPin = 7;
-
 int swithState = LOW;
 int buttonState = LOW;
-uint32_t lastPressed = 0;
+unsigned long lastPressed = 0;
+unsigned long previousMillis = 0;
+
+float mAh = 0;
+float current_mA = 0;
+float mWh = 0;
+float power_mW = 0;
+unsigned long lastread = 0; // used to calculate Ah
+unsigned long tick;         // current read time - last read
 
 void setupDisplay() {
   Serial.begin(9600);
@@ -33,41 +40,50 @@ void setupDisplay() {
 
 void setupMonitor() {
   monitor.begin();
-  monitor.configure(INA219::RANGE_16V, INA219::GAIN_2_80MV, INA219::ADC_16SAMP, INA219::ADC_16SAMP, INA219::CONT_SH_BUS);
+  monitor.configure(INA219::RANGE_16V, INA219::GAIN_1_40MV, INA219::ADC_128SAMP, INA219::ADC_128SAMP, INA219::CONT_SH_BUS);
 }
 
 void loopDisplay(U8X8_SSD1306_128X64_NONAME_HW_I2C oled, INA219 monitor) {
+  unsigned long newtime;
   oled.setCursor(0,0);
   oled.print(millis());
 
   oled.setCursor(0,1);
-  oled.print("sVolts: ");
-  oled.setCursor(7, 1); oled.print(monitor.shuntVoltage() * 1000, 2);
-  oled.setCursor(14, 1); oled.print("mV");
+  oled.print("s mV: "); oled.print(monitor.shuntVoltage() * 1000, 2);
+  oled.print("   ");
 
   oled.setCursor(0,2);
-  oled.print("sAmps: ");
-  oled.setCursor(7, 2); oled.print(monitor.shuntCurrent() * 1000, 2);
-  oled.setCursor(14, 2); oled.print("mA");
+  current_mA = monitor.shuntCurrent() * 1000;
+  oled.print("s mA: "); oled.print(current_mA, 2);
+  oled.print("   ");
 
   oled.setCursor(0,3);
-  oled.print("bVolts: ");
-  oled.setCursor(7, 3); oled.print(monitor.busVoltage(), 2);
-  oled.setCursor(14, 3); oled.print(" V");
+  oled.print("b V:  "); oled.print(monitor.busVoltage(), 2);
+  oled.print("   ");
 
   oled.setCursor(0,4);
-  oled.print("bWatts:");
-  oled.setCursor(7, 4); oled.print(monitor.busPower() * 1000, 2);
-  oled.setCursor(14, 4); oled.print("mW");
+  power_mW = monitor.busPower() * 1000;
+  oled.print("b mW: "); oled.print(power_mW, 2);
+  oled.print("   ");
+
+  newtime = millis();
+  tick = newtime - lastread;
+  mAh += (current_mA * tick)/3600000.0;
+  mWh += (power_mW * tick)/3600000.0;
+  lastread = newtime;
 
   oled.setCursor(0,5);
-  oled.print("sum mAh:");
+  oled.print("E mAh: "); oled.print(mAh);
+  oled.print("  ");
 
   oled.setCursor(0,6);
-  oled.print("button: "); oled.print(buttonState);
+  oled.print("E mWh: "); oled.print(mWh);
+  oled.print("  ");
 
   oled.setCursor(0,7);
-  oled.print("switch: "); oled.print(swithState);
+  oled.print("b: "); oled.print(buttonState);
+  oled.print("  ");
+  oled.print("s: "); oled.print(swithState);
 }
 
 void loopMonitor(INA219 monitor) {
@@ -82,17 +98,25 @@ void setup() {
   pinMode(buttonPin, INPUT);
 }
 
-#define DEBOUNCE_TIME_MS 100
+#define BUTTON_DEBOUNCE_TIME_MS 100
+#define DISPLAY_INTERVAL_MS 100
+
 void loop() {
+  unsigned long currentMillis = millis();
+
   buttonState = digitalRead(buttonPin);
   if (buttonState == HIGH) {
-    if (millis() - lastPressed > DEBOUNCE_TIME_MS) {
+    if (currentMillis - lastPressed > BUTTON_DEBOUNCE_TIME_MS) {
       swithState = !swithState;
       digitalWrite(switchPin, swithState);
     }
     lastPressed = millis();
   }
 
-  loopDisplay(oled, monitor);
-  loopMonitor(monitor);
+  if (currentMillis - previousMillis >= DISPLAY_INTERVAL_MS) {
+    previousMillis = currentMillis;
+
+    loopDisplay(oled, monitor);
+    loopMonitor(monitor);
+  }
 }
