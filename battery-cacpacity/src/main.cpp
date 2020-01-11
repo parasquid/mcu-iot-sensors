@@ -7,7 +7,7 @@
 #include "SdFat.h"
 
 const uint8_t chipSelect = SS;
-const uint32_t SAMPLE_INTERVAL_MS = 1000 * 30;
+const uint32_t SAMPLE_INTERVAL_MS = 1000 * 15;
 #define FILE_BASE_NAME "Data"
 SdFat sd;
 SdFile file;
@@ -69,7 +69,7 @@ void setupDisplay() {
 
 void setupMonitor() {
   monitor.begin();
-  monitor.configure(INA219::RANGE_16V, INA219::GAIN_1_40MV, INA219::ADC_128SAMP, INA219::ADC_128SAMP, INA219::CONT_SH_BUS);
+  monitor.configure(INA219::RANGE_16V, INA219::GAIN_8_320MV, INA219::ADC_128SAMP, INA219::ADC_128SAMP, INA219::CONT_SH_BUS);
 }
 
 void loopDisplay(U8X8_SSD1306_128X64_NONAME_HW_I2C oled, INA219 monitor) {
