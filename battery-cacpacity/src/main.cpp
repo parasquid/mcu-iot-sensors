@@ -75,7 +75,7 @@ void setupMonitor() {
 void loopDisplay(U8X8_SSD1306_128X64_NONAME_HW_I2C oled, INA219 monitor) {
   unsigned long newtime;
   oled.setCursor(0,0);
-  oled.print(millis());
+  oled.print(millis() / 1000);
 
   oled.setCursor(0,1);
   oled.print("s mV: "); oled.print(monitor.shuntVoltage() * 1000, 2);
@@ -129,7 +129,7 @@ void setup() {
   const uint8_t BASE_NAME_SIZE = sizeof(FILE_BASE_NAME) - 1;
   char fileName[13] = FILE_BASE_NAME "00.csv";
   if (!sd.begin(chipSelect, SD_SCK_MHZ(50))) {
-    sd.initErrorHalt();
+    sd.initErrorHalt(&oled);
   }
   if (BASE_NAME_SIZE > 6) {
     error("FILE_BASE_NAME too long");
