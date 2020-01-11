@@ -7,7 +7,7 @@
 #include "SdFat.h"
 
 const uint8_t chipSelect = SS;
-const uint32_t SAMPLE_INTERVAL_MS = 1000;
+const uint32_t SAMPLE_INTERVAL_MS = 1000 * 30;
 #define FILE_BASE_NAME "Data"
 SdFat sd;
 SdFile file;
@@ -31,6 +31,7 @@ float mWh = 0;
 float power_mW = 0;
 unsigned long lastread = 0; // used to calculate Ah
 unsigned long tick;         // current read time - last read
+int started = LOW;
 
 #define error(msg) Serial.println(msg)
 
@@ -162,14 +163,16 @@ void loop() {
       switchState = !switchState;
       digitalWrite(switchPin, switchState);
     }
+    if (switchState == HIGH) {
+      started = HIGH;
+    }
     lastPressed = millis();
   }
 
   if (currentMillis - lastDisplayUpdate >= DISPLAY_INTERVAL_MS) {
-    lastDisplayUpdate = currentMillis;
-
     loopDisplay(oled, monitor);
     loopMonitor(monitor);
+    lastDisplayUpdate = currentMillis;
   }
 
   if (currentMillis - logTime >= SAMPLE_INTERVAL_MS && switchState == HIGH) {
@@ -183,12 +186,14 @@ void loop() {
     }
   }
 
-  if (switchState == LOW) {
+  if (switchState == LOW && started == HIGH) {
     file.close();
+    Serial.println("logging turned off!");
   }
 
-  if (bus_V < 3) {
+  if (bus_V < 3.0 && started == HIGH) {
     switchState = LOW;
     digitalWrite(switchPin, switchState);
+    Serial.println("power turned off!");
   }
 }
