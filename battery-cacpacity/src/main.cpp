@@ -147,8 +147,6 @@ void setup() {
   if (!file.open(fileName, O_WRONLY | O_CREAT | O_EXCL)) {
     error("file.open");
   }
-
-  writeHeader();
 }
 
 #define BUTTON_DEBOUNCE_TIME_MS 100
@@ -165,6 +163,7 @@ void loop() {
     }
     if (switchState == HIGH) {
       started = HIGH;
+      writeHeader();
     }
     lastPressed = millis();
   }
