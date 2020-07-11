@@ -7,12 +7,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# ----------------------------------------------------------------------------------------
-# This file contains information for a specific board - the available pins, and where LEDs,
-# Buttons, and other in-built peripherals are. It is used to build documentation as well
-# as various source and header files for Espruino.
-# ----------------------------------------------------------------------------------------
-
+# also see http://forum.espruino.com/comments/15016862/ and
+# https://github.com/AkosLukacs/espruinostuff/blob/master/boards/E73TRM01.py
+#
 # # Board file for EBYTE's E73-TRM-01 based on the MDBT42Q.
 # # There is no bootloader or anything, you need an SWD programmer to program it.
 #
@@ -42,7 +39,7 @@
 import pinutils;
 
 info = {
- 'name' : "E73-TRM-01",
+ 'name' : "E73TRM01",
  'link' :  [ "http://ebyte.com/en/product-view-news.aspx?id=243" ],
  'espruino_page_link' : '',
  'default_console' : "EV_SERIAL1",
@@ -95,7 +92,7 @@ chip = {
 
 devices = {
   'LED1' : { 'pin' : 'D17' },
-  'LED2' : { 'pin' : 'D18', 'no_bootloader':True }, # don't use LED2 in the bootloader since we may be using a bare module
+  'LED2' : { 'pin' : 'D18' },
   'BTN1' : { 'pin' : 'D14', 'pinstate' : 'IN_PULLDOWN' },
   'BTN2' : { 'pin' : 'D13', 'pinstate' : 'IN_PULLDOWN' },
   'NFC': { 'pin_a':'D9', 'pin_b':'D10' },
@@ -105,102 +102,6 @@ devices = {
   'RTS_PIN_NUMBER' : { 'pin' : 'D5'},
   # Pin D22 is used for clock when driving neopixels - as not specifying a pin seems to break things
 };
-
-# left-right, or top-bottom order
-board_module = {
-  'left' : [ 'GND','','','','D25','D26','D27','D28','D29','D30','D31','DEC4','DCC','VDD'],
-  'right2' : [ 'D24', '', 'D23'],
-  'right' : [ 'GND','D22','SWDIO','SWDCLK','D21','D20','D19','D18','D17','D16','D15','D14','D13','D12','D11' ],
-  'bottom' : [ 'GND','D0','D1','D2','D3','D4','D5','D6','D7','D8','D9','D10','GND' ],
-  '_notes' : {
-    'D21' : "Also NRST if configured",
-    'D22' : "This is used as SCK when driving Neopixels with 'require('neopixel').write'. If not driving neopixels this behaves like any other pin.",
-  }
-};
-
-board_module["_css"] = """
-#board {
-  width: 359px;
-  height: 484px;
-  top: 0px;
-  left : 200px;
-  background-image: url(img/MDBT42Q.jpg);
-}
-#boardcontainer {
-  height: 650px;
-}
-#board #bottom {
-    top: 440px;
-    left: 56px;
-}
-#board #left {
-    top: 115px;
-    right: 316px;
-}
-#board #right2 {
-    top: 115px;
-    right: 110px;
-}
-#board #right {
-    top: 115px;
-    left: 316px;
-}
-
-#board .leftpin { height: 17px; }
-#board .left2pin { height: 17px; }
-#board .rightpin { height: 17px; }
-#board .bottompin { width: 15px; padding:0px; }
-""";
-
-board_breakout = {
-  'left' : [ 'D25','D26','D27','D28','D29','D30','D31','D3','D4','D5','D11' ],
-  'right' : [ 'D22','D20','D19','D18','D17','D16','D15','D14','3.3','Vin','GND'],
-  'bottom' : [ 'D6','D8','D7','Vin','GND' ],
-  'top' : [ 'D9','D10' ],
-  '_hide_not_on_connectors' : True,
-  '_class' : "board_breakout",
-  '_notes' : {
-    'D8' : "Serial Console RX when Bluetooth disconnected",
-    'D6' : "Serial Console TX when Bluetooth disconnected",
-  }
-};
-
-board_breakout["_css"] = """
-#board {
-  width: 255px;
-  height: 400px;
-  top: 0px;
-  left : 200px;
-  background-image: url(img/MDBT42Q_BREAKOUT.png);
-}
-#boardcontainer {
-  height: 600px;
-}
-#board #bottom {
-    top: 410px;
-    left: 40px;
-}
-#board #top {
-    bottom: 75px;
-    left: 167px;
-}
-#board #left {
-    top: 17px;
-    right: 256px;
-}
-#board #right {
-    top: 17px;
-    left: 256px;
-}
-
-#board .leftpin { height: 33px; }
-#board .rightpin { height: 33px; }
-#board .toppin { width: 15px; padding:0px; }
-#board .bottompin { width: 31px; padding:0px; }
-""";
-
-boards = [board_module, board_breakout];
-
 
 def get_pins():
   pins = pinutils.generate_pins(0,31) # 32 General Purpose I/O Pins.
