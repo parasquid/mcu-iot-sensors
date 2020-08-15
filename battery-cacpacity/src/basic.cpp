@@ -6,7 +6,7 @@
 
 INA_Class monitor;
 
-U8X8_SSD1306_128X64_NONAME_HW_I2C oled(/* reset=*/ U8X8_PIN_NONE);
+U8X8_SSD1306_128X32_UNIVISION_HW_I2C oled(/* reset=*/ U8X8_PIN_NONE);
 
 unsigned long lastDisplayUpdate = 0;
 
@@ -17,14 +17,14 @@ float mWh = 0;
 float power_mW = 0;
 unsigned long lastread = 0; // used to calculate Ah
 unsigned long tick;         // current read time - last read
+boolean toggle = false;
 
 #define error(msg) Serial.println(msg)
 
 void setupDisplay() {
-  Serial.begin(9600);
   oled.begin();
   oled.setFlipMode(1);
-  oled.setFont(u8x8_font_pressstart2p_r);
+  oled.setFont(u8x8_font_amstrad_cpc_extended_f);
 }
 
 void setupMonitor() {
@@ -37,46 +37,49 @@ void setupMonitor() {
 
 void loopDisplay() {
   unsigned long newtime;
+
   oled.setCursor(0,0);
-  oled.print(millis() / 1000);
+  current_mA = monitor.getBusMicroAmps() / 1000.0;
+  oled.print("mA: "); oled.print(current_mA, 2);
+  oled.print("   ");
+  Serial.println(current_mA);
 
   oled.setCursor(0,1);
-  oled.print("s mV: "); oled.print(monitor.getShuntMicroVolts() / 1000.0, 2);
+  bus_V = monitor.getBusMilliVolts() / 1000.0;
+  oled.print("V:  "); oled.print(bus_V, 2);
   oled.print("   ");
+  Serial.println(bus_V);
 
   oled.setCursor(0,2);
-  current_mA = monitor.getBusMicroAmps() / 1000.0;
-  oled.print("s mA: "); oled.print(current_mA, 2);
-  oled.print("   ");
+  oled.print("mAh: "); oled.print(mAh);
+  oled.print("  ");
+  Serial.println(mAh);
 
   oled.setCursor(0,3);
-  bus_V = monitor.getBusMilliVolts() / 1000.0;
-  oled.print("b V:  "); oled.print(bus_V, 2);
-  oled.print("   ");
+  oled.print("mWh: "); oled.print(mWh);
+  oled.print("  ");
+  Serial.println(mWh);
 
-  oled.setCursor(0,4);
-  power_mW = monitor.getBusMicroWatts() / 1000.0;
-  oled.print("b mW: "); oled.print(power_mW, 2);
-  oled.print("   ");
+  oled.setCursor(12,3);
+  oled.print(millis() / 1000);
 
   newtime = millis();
   tick = newtime - lastread;
   mAh += (current_mA * tick)/3600000.0;
   mWh += (power_mW * tick)/3600000.0;
   lastread = newtime;
-
-  oled.setCursor(0,5);
-  oled.print("E mAh: "); oled.print(mAh);
-  oled.print("  ");
-
-  oled.setCursor(0,6);
-  oled.print("E mWh: "); oled.print(mWh);
-  oled.print("  ");
 }
 
 void setup() {
+  Serial.begin(115200);
+  Serial.println("starting");
+  digitalWrite(LED_BUILTIN, HIGH);
   setupDisplay();
+  digitalWrite(LED_BUILTIN, LOW);
+  Serial.println("oled setup");
   setupMonitor();
+  digitalWrite(LED_BUILTIN, HIGH);
+  Serial.println("monitor setup");
 }
 
 #define DISPLAY_INTERVAL_MS 100
@@ -85,6 +88,8 @@ void loop() {
   unsigned long currentMillis = millis();
 
   if (currentMillis - lastDisplayUpdate >= DISPLAY_INTERVAL_MS) {
+    toggle = !toggle;
+    digitalWrite(LED_BUILTIN, toggle);
     loopDisplay();
     lastDisplayUpdate = currentMillis;
   }
