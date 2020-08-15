@@ -6,7 +6,7 @@
 
 INA_Class monitor;
 
-U8X8_SSD1306_128X32_UNIVISION_HW_I2C oled(/* reset=*/ U8X8_PIN_NONE);
+U8X8_SSD1306_128X64_NONAME_HW_I2C oled(/* reset=*/ U8X8_PIN_NONE);
 
 unsigned long lastDisplayUpdate = 0;
 
