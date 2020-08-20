@@ -6,7 +6,7 @@
 
 INA_Class monitor;
 
-U8X8_SSD1306_128X64_NONAME_HW_I2C oled(/* reset=*/ U8X8_PIN_NONE);
+U8X8_SSD1306_128X64_NONAME_HW_I2C oled;
 
 unsigned long lastDisplayUpdate = 0;
 
@@ -23,7 +23,8 @@ boolean toggle = false;
 
 void setupDisplay() {
   oled.begin();
-  oled.setFlipMode(1);
+  oled.setFlipMode(0);
+  oled.setBusClock(100000);
   oled.setFont(u8x8_font_amstrad_cpc_extended_f);
 }
 
