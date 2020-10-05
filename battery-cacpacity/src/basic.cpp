@@ -6,7 +6,7 @@
 
 INA_Class monitor;
 
-U8X8_SSD1306_128X64_NONAME_HW_I2C oled;
+U8X8_SSD1306_128X32_UNIVISION_HW_I2C oled;
 
 unsigned long lastDisplayUpdate = 0;
 
@@ -23,7 +23,7 @@ boolean toggle = false;
 
 void setupDisplay() {
   oled.begin();
-  oled.setFlipMode(0);
+  oled.setFlipMode(1);
   oled.setBusClock(100000);
   oled.setFont(u8x8_font_amstrad_cpc_extended_f);
 }
@@ -41,13 +41,13 @@ void loopDisplay() {
 
   oled.setCursor(0,0);
   current_mA = monitor.getBusMicroAmps() / 1000.0;
-  oled.print("mA: "); oled.print(current_mA, 2);
+  oled.print("mA: "); oled.print(current_mA, 3);
   oled.print("   ");
   Serial.println(current_mA);
 
   oled.setCursor(0,1);
   bus_V = monitor.getBusMilliVolts() / 1000.0;
-  oled.print("V:  "); oled.print(bus_V, 2);
+  oled.print("V:  "); oled.print(bus_V, 3);
   oled.print("   ");
   Serial.println(bus_V);
 
@@ -61,7 +61,7 @@ void loopDisplay() {
   oled.print("  ");
   Serial.println(mWh);
 
-  oled.setCursor(12,3);
+  oled.setCursor(11,3);
   oled.print(millis() / 1000);
 
   newtime = millis();
@@ -72,6 +72,7 @@ void loopDisplay() {
 }
 
 void setup() {
+  delay(1000);
   Serial.begin(115200);
   Serial.println("starting");
   digitalWrite(LED_BUILTIN, HIGH);
