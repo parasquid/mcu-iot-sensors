@@ -50,9 +50,6 @@ s.on('data', function (data) {
           //return;
         }
 
-        if (data.pm10 < 0) data.pm10 = 0;
-        if (data.pm10 > 255) data.pm10 = 255;
-
         pmData = {pm25: data.pm25, pm10: data.pm10, t: Date.now()};
 
         digitalPulse(LED1, true, 50);
@@ -99,6 +96,16 @@ var hdc = exports.connect(I2C1);
 var temperature = 25;
 var humidity = 50;
 
+const start = () => {
+  g.clear();
+  g.setFont("6x8");
+  g.drawString("Hello World!",0,0);
+  g.flip();
+};
+
+var g = require("SSD1306").connect(I2C1, start);
+require("Font6x8").add(Graphics);
+
 const serviceData = (t, h) => {
   return {
     0x181A: { // org.bluetooth.descriptor.es_measurement
@@ -112,18 +119,18 @@ const serviceData = (t, h) => {
   };
 };
 
+const bleService = (value) => {
+  return {
+    value: [value],
+    readable: true,
+    maxLen: 8,
+  };
+};
+
 NRF.setServices({
   0x181A: { // org.bluetooth.descriptor.es_measurement
-    0x2A6E: { // temperature
-      value : [temperature * 100],
-      readable : true,
-      maxLen: 8,
-    },
-    0x2A6F: { // humidity
-      value: [humidity * 100],
-      readable : true,
-      maxLen: 8,
-    },
+    0x2A6E: bleService(temperature),
+    0x2A6F: bleService(humidity),
   }
 }, { advertise: [ '0x181A' ] });
 
@@ -142,6 +149,16 @@ gas.on('data', (data) => {
     0x2A6E: [t&255,t>>8],
     0x2A6F: [h&255,h>>8],
   });
+
+  g.clear();
+  g.setFont("6x8");
+  g.drawString('eCO2 : ' + data.eCO2, 0, 0);
+  g.drawString('TVOC : ' + data.TVOC, 0, 10);
+  g.drawString('temp : ' + t / 100.0, 0, 20);
+  g.drawString('hmdty: ' + h / 100.0, 0, 30);
+  g.drawString('pm2.5: ' + pmData.pm25, 0, 40);
+  g.drawString('pm10 : ' + pmData.pm10, 0, 50);
+  g.flip();
 
   NRF.updateServices(serviceData([t&255,t>>8], [h&255,h>>8]));
 });
