@@ -1,3 +1,9 @@
+const getUuid = (i) => {
+  const num = i.toString();
+  const id = ("0").repeat((4 - num.length) > 0 ? (4 - num.length) : 0) + num;
+  return 'd7e5' + id + '-0109-4306-956f2f725ba7a85d';
+};
+
 var s = new Serial();
 s.setup(9600,{rx: D33, tx: D34});
 
@@ -44,7 +50,7 @@ s.on('data', function (data) {
           return;
         }
         if (calculatedChecksum != data.checksum) {
-          print(calculatedChecksum, data.checksum);
+          print(calculatedChecksum, data.checksum, calculatedChecksum - data.checksum, arrayBuffer);
           // we're getting too many invalid checksums so comment out
           // the early return for now ...
           //return;
@@ -106,33 +112,28 @@ const start = () => {
 var g = require("SSD1306").connect(I2C1, start);
 require("Font6x8").add(Graphics);
 
-const serviceData = (t, h) => {
-  return {
-    0x181A: { // org.bluetooth.descriptor.es_measurement
-      0x2A6E: { // temperature
-        value : t,
-      },
-      0x2A6F: { // humidity
-        value: h,
-      },
-    }
-  };
-};
-
-const bleService = (value) => {
+const bleService = (value, description) => {
   return {
     value: [value],
     readable: true,
     maxLen: 8,
+    notify : true,
+    description: description,
   };
 };
-
-NRF.setServices({
+const defaultServices = {
   0x181A: { // org.bluetooth.descriptor.es_measurement
     0x2A6E: bleService(temperature),
     0x2A6F: bleService(humidity),
   }
-}, { advertise: [ '0x181A' ] });
+};
+defaultServices[0x181A][getUuid(1)] = bleService(400, 'eCO2');
+defaultServices[0x181A][getUuid(2)] = bleService(0, 'TVOC');
+defaultServices[0x181A][getUuid(3)] = bleService(0, 'pm 2.5');
+defaultServices[0x181A][getUuid(4)] = bleService(0, 'pm 10');
+defaultServices[0x181A][getUuid(5)] = bleService(0, 'beat');
+
+NRF.setServices(defaultServices, { advertise: [ '0x181A' ] });
 
 gas.on('data', (data) => {
   hdc.read().then((e) => {
@@ -145,10 +146,11 @@ gas.on('data', (data) => {
   // Bluetooth spec says data is 16 bits, 0.01/unit - so x100
   const t = Math.round(temperature*100);
   const h = Math.round(humidity*100);
-  NRF.setAdvertising({
+  const advertData = {
     0x2A6E: [t&255,t>>8],
     0x2A6F: [h&255,h>>8],
-  });
+  };
+  NRF.setAdvertising(advertData);
 
   g.clear();
   g.setFont("6x8");
@@ -160,5 +162,23 @@ gas.on('data', (data) => {
   g.drawString('pm10 : ' + pmData.pm10, 0, 50);
   g.flip();
 
-  NRF.updateServices(serviceData([t&255,t>>8], [h&255,h>>8]));
+  const serviceData = {
+    0x181A: { // org.bluetooth.descriptor.es_measurement
+      0x2A6E: { // temperature
+        value: [t&255,t>>8],
+        notify: true,
+      },
+      0x2A6F: { // humidity
+        value: [h&255,h>>8],
+        notify: true,
+      },
+    }
+  };
+  serviceData[0x181A][getUuid(1)] = { value: [data.eCO2], notify: true };
+  serviceData[0x181A][getUuid(2)] = { value: [data.TVOC], notify: true };
+  serviceData[0x181A][getUuid(3)] = { value: [pmData.pm25], notify: true };
+  serviceData[0x181A][getUuid(4)] = { value: [pmData.pm10], notify: true };
+  serviceData[0x181A][getUuid(5)] = { value: [pmData.t], notify: true };
+
+  NRF.updateServices(serviceData);
 });
