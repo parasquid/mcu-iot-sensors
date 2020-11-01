@@ -173,7 +173,7 @@ gas.on('data', (data) => {
         notify: true,
       },
       0x2A6F: { // humidity
-        value: littleEndian(t),
+        value: littleEndian(h),
         notify: true,
       },
     }
