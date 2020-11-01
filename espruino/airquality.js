@@ -1,7 +1,7 @@
 const getUuid = (i) => {
   const num = i.toString();
   const id = ("0").repeat((4 - num.length) > 0 ? (4 - num.length) : 0) + num;
-  return 'd7e5' + id + '-0109-4306-956f2f725ba7a85d';
+  return 'd7e5' + id + '-0109-4306-956f-2f725ba7a85d';
 };
 
 var s = new Serial();
@@ -162,22 +162,27 @@ gas.on('data', (data) => {
   g.drawString('pm10 : ' + pmData.pm10, 0, 50);
   g.flip();
 
+  const littleEndian = (value) => {
+    return [value&255, value>>8];
+  };
+
   const serviceData = {
     0x181A: { // org.bluetooth.descriptor.es_measurement
       0x2A6E: { // temperature
-        value: [t&255,t>>8],
+        value: littleEndian(t),
         notify: true,
       },
       0x2A6F: { // humidity
-        value: [h&255,h>>8],
+        value: littleEndian(t),
         notify: true,
       },
     }
   };
-  serviceData[0x181A][getUuid(1)] = { value: [data.eCO2], notify: true };
-  serviceData[0x181A][getUuid(2)] = { value: [data.TVOC], notify: true };
-  serviceData[0x181A][getUuid(3)] = { value: [pmData.pm25], notify: true };
-  serviceData[0x181A][getUuid(4)] = { value: [pmData.pm10], notify: true };
+
+  serviceData[0x181A][getUuid(1)] = { value: littleEndian(data.eCO2), notify: true };
+  serviceData[0x181A][getUuid(2)] = { value: littleEndian(data.TVOC), notify: true };
+  serviceData[0x181A][getUuid(3)] = { value: littleEndian(pmData.pm25), notify: true };
+  serviceData[0x181A][getUuid(4)] = { value: littleEndian(pmData.pm10), notify: true };
   serviceData[0x181A][getUuid(5)] = { value: [pmData.t], notify: true };
 
   NRF.updateServices(serviceData, { advertise: [ '0x181A' ] });
