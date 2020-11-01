@@ -180,5 +180,5 @@ gas.on('data', (data) => {
   serviceData[0x181A][getUuid(4)] = { value: [pmData.pm10], notify: true };
   serviceData[0x181A][getUuid(5)] = { value: [pmData.t], notify: true };
 
-  NRF.updateServices(serviceData);
+  NRF.updateServices(serviceData, { advertise: [ '0x181A' ] });
 });
