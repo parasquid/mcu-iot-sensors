@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<head>
+  <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+  <script type="text/babel">
+    const ECO2 = 'd7e50001-0109-4306-956f-2f725ba7a85d';
+    const TVOC = 'd7e50002-0109-4306-956f-2f725ba7a85d';
+    const PM25 = 'd7e50003-0109-4306-956f-2f725ba7a85d';
+    const PM10 = 'd7e50004-0109-4306-956f-2f725ba7a85d';
+    const characteristics = {
+      temperature: 'temperature',
+      humidity: 'humidity',
+      eCO2: ECO2,
+      TVOC: TVOC,
+      'pm2.5': PM25,
+      'pm10': PM10,
+    }
+
+    class App extends React.Component {
+      constructor(props) {
+        super(props);
+        this.services = [];
+        this.filters = [{services: this.services}]
+        this.defaultState = () => ({
+          temperature: null,
+          humidity: null,
+          eCO2: null,
+          TVOC: null,
+          'pm2.5': null,
+          'pm10': null,
+          connected: false,
+        });
+        this.state = this.defaultState();
+        this.device = null;
+      }
+
+      connectAndSubscribe = async() => {
+        try {
+          this.services.push('environmental_sensing');
+
+          this.device = await navigator.bluetooth.requestDevice({filters: this.filters});
+          this.device.addEventListener('gattserverdisconnected', this.onDisconnected);
+
+          const server = await this.device.gatt.connect();
+          const service = await server.getPrimaryService('environmental_sensing');
+
+          Object.keys(characteristics).forEach((name) => {
+            service.getCharacteristic(characteristics[name])
+              .then(c => c.startNotifications())
+              .then(c => c.addEventListener(
+                'characteristicvaluechanged',
+                this.handleCharacteristicValueChanged(name)
+              )
+            );
+          });
+
+          this.setState({connected: true});
+        } catch(err) {
+          console.error({err});
+        }
+      };
+
+      handleCharacteristicValueChanged = (name) => (event) => {
+        let value = event.target.value.getUint16(0, true); // little endian
+        if (name === 'temperature' || name === 'humidity') value = value / 100;
+        const newState = {}
+        newState[name] = value
+        this.setState(newState)
+      };
+
+      disconnect = async() => {
+        if (this.device.gatt.connected) {
+          this.device.gatt.disconnect();
+        }
+      }
+
+      onDisconnected = (event) => {
+        // cleanup
+        this.setState(this.defaultState())
+      }
+
+      render() {
+        return(
+          <React.Fragment>
+            <button onClick={this.state.connected ? this.disconnect : this.connectAndSubscribe}>
+              {this.state.connected ? "Disconnect" : "Connect to device"}
+            </button>
+            {Object.keys(characteristics).map((name) => (
+              <p key={name}>{name}: {this.state[name]}</p>
+            ))}
+          </React.Fragment>
+        );
+      }
+    };
+
+  </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    ReactDOM.render(
+      <App />,
+      document.getElementById('root')
+    );
+  </script>
+</body>
+
+</html>
