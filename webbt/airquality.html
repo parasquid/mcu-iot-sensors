@@ -1,10 +1,19 @@
+
 <!DOCTYPE html>
 <head>
-  <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="HandheldFriendly" content="true">
 
-  <script type="text/babel">
+  <style>
+    button { font-size: xx-large; }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/moment@2.24.0/min/moment.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-streaming@1.8.0"></script>
+
+  <script>
     const ECO2 = 'd7e50001-0109-4306-956f-2f725ba7a85d';
     const TVOC = 'd7e50002-0109-4306-956f-2f725ba7a85d';
     const PM25 = 'd7e50003-0109-4306-956f-2f725ba7a85d';
@@ -18,93 +27,145 @@
       'pm10': PM10,
     }
 
-    class App extends React.Component {
-      constructor(props) {
-        super(props);
-        this.services = [];
-        this.filters = [{services: this.services}]
-        this.defaultState = () => ({
-          temperature: null,
-          humidity: null,
-          eCO2: null,
-          TVOC: null,
-          'pm2.5': null,
-          'pm10': null,
-          connected: false,
+    const chartColors = {
+      temperature: 'rgb(255, 99, 132)',
+      humidity: 'rgb(255, 159, 64)',
+      eCO2: 'rgb(255, 205, 86)',
+      TVOC: 'rgb(75, 192, 192)',
+      'pm2.5': 'rgb(54, 162, 235)',
+      'pm10': 'rgb(153, 102, 255)',
+      t: 'rgb(201, 203, 207)'
+    };
+
+    const chartConfig = {
+      type: 'line',
+      data: {
+        datasets: []
+      },
+      options: {
+        scales: {
+          xAxes: [{
+            type: 'realtime',
+            realtime: {
+              duration: 15000,
+              delay: 2000,
+            }
+          }],
+          yAxes: [{
+            id: 'A',
+            type: 'linear',
+            position: 'left',
+          }, {
+            id: 'B',
+            type: 'linear',
+            position: 'right',
+            ticks: {
+              min: 400
+            },
+          }],
+        },
+        tooltips: {
+          mode: 'nearest',
+          intersect: false
+        },
+        hover: {
+          mode: 'nearest',
+          intersect: false
+        },
+        plugins: {
+          streaming: {
+            frameRate: 60
+          }
+        }
+      }
+    };
+    Object.keys(characteristics).forEach(label => {
+      let yAxisID = 'A';
+      console.log(chartColors[1])
+      if(label === 'eCO2') yAxisID = 'B'
+      chartConfig.data.datasets.push({
+        label,
+        yAxisID,
+        borderColor: chartColors[label],
+        fill: false,
+        data: [],
+      });
+    })
+
+    let device = null;
+    let characteristic = null;
+    let ctx = null;
+    let chart = null;
+
+    const connectAndSubscribe = async(e) => {
+      try {
+        const services = [];
+        const filters = [{services}]
+        services.push('environmental_sensing');
+
+        // summon pairing ui
+        device = await navigator.bluetooth.requestDevice({filters});
+
+        // setup callback so we can clean up on disconnection
+        device.addEventListener('gattserverdisconnected', onDisconnected);
+
+        // connect to the lightbulb
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService('environmental_sensing');
+
+        Object.keys(characteristics).forEach((name) => {
+          service.getCharacteristic(characteristics[name])
+            .then(c => c.startNotifications())
+            .then(c => c.addEventListener(
+              'characteristicvaluechanged',
+              handleCharacteristicValueChanged(name)
+            )
+          );
         });
-        this.state = this.defaultState();
-        this.device = null;
-      }
-
-      connectAndSubscribe = async() => {
-        try {
-          this.services.push('environmental_sensing');
-
-          this.device = await navigator.bluetooth.requestDevice({filters: this.filters});
-          this.device.addEventListener('gattserverdisconnected', this.onDisconnected);
-
-          const server = await this.device.gatt.connect();
-          const service = await server.getPrimaryService('environmental_sensing');
-
-          Object.keys(characteristics).forEach((name) => {
-            service.getCharacteristic(characteristics[name])
-              .then(c => c.startNotifications())
-              .then(c => c.addEventListener(
-                'characteristicvaluechanged',
-                this.handleCharacteristicValueChanged(name)
-              )
-            );
-          });
-
-          this.setState({connected: true});
-        } catch(err) {
-          console.error({err});
-        }
-      };
-
-      handleCharacteristicValueChanged = (name) => (event) => {
-        let value = event.target.value.getUint16(0, true); // little endian
-        if (name === 'temperature' || name === 'humidity') value = value / 100;
-        const newState = {}
-        newState[name] = value
-        this.setState(newState)
-      };
-
-      disconnect = async() => {
-        if (this.device.gatt.connected) {
-          this.device.gatt.disconnect();
-        }
-      }
-
-      onDisconnected = (event) => {
-        // cleanup
-        this.setState(this.defaultState())
-      }
-
-      render() {
-        return(
-          <React.Fragment>
-            <button onClick={this.state.connected ? this.disconnect : this.connectAndSubscribe}>
-              {this.state.connected ? "Disconnect" : "Connect to device"}
-            </button>
-            {Object.keys(characteristics).map((name) => (
-              <p key={name}>{name}: {this.state[name]}</p>
-            ))}
-          </React.Fragment>
-        );
+      } catch(err) {
+        console.error({err});
       }
     };
 
+    const handleCharacteristicValueChanged = (name) => (event) => {
+      let value = event.target.value.getUint16(0, true); // little endian
+      if (name === 'temperature' || name === 'humidity') value = value / 100;
+
+      chart.data.datasets.find((d) => d.label === name).data.push({
+        x: Date.now(),
+        y: value,
+      })
+
+      chart.update({ preservation: true });
+    };
+
+    const disconnect = async(e) => {
+      if (device && device.gatt.connected) device.gatt.disconnect();
+    };
+
+    const onDisconnected = (event) => {
+      device = null;
+      characteristic = null;
+      console.log("disconnected!");
+    };
   </script>
 </head>
 
 <body>
-  <div id="root"></div>
-  <script type="text/babel">
-    ReactDOM.render(
-      <App />,
-      document.getElementById('root')
-    );
+  <button onclick="connectAndSubscribe(this)">
+    Connect to device
+  </button>
+  <button onclick="disconnect(this)">
+    Disconnect from device
+  </button>
+
+  <div style="width:720px; margin:auto;">
+    <canvas id="myChart" style="display: block; width: 720px; height: 480px;" width="720" height="480"></canvas>
+  </div>
+
+  <script>
+    ctx = document.getElementById('myChart').getContext('2d');
+    chart = new Chart(ctx, chartConfig);
   </script>
 </body>
 
