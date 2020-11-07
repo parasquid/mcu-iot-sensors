@@ -33,8 +33,8 @@ s.on('data', function (data) {
         data = {
           header: dataView.getUint16(0),
           length: dataView.getUint16(2),
-          pm25: dataView.getUint16(6),
-          pm10: dataView.getUint16(8),
+          pm25: dataView.getUint8(6 + 1),
+          pm10: dataView.getUint8(8 + 1),
           checksum: dataView.getUint16(30),
         };
 
@@ -43,10 +43,6 @@ s.on('data', function (data) {
         // early return on bad data
         if (data.length != 28) {
           // print(data.length);
-          return;
-        }
-        if (data.pm25 < 0 || data.pm25 > 1000) {
-          // print(data);
           return;
         }
         if (calculatedChecksum != data.checksum) {
@@ -135,6 +131,10 @@ defaultServices[0x181A][getUuid(5)] = bleService(0, 'beat');
 
 NRF.setServices(defaultServices, { advertise: [ '0x181A' ] });
 
+const littleEndian = (value) => {
+  return [value&255, value>>8];
+};
+
 gas.on('data', (data) => {
   hdc.read().then((e) => {
     temperature = e.temperature;
@@ -143,28 +143,24 @@ gas.on('data', (data) => {
   gas.setEnvData(humidity, temperature);
   print(data, temperature, humidity, pmData);
 
-  // Bluetooth spec says data is 16 bits, 0.01/unit - so x100
-  const t = Math.round(temperature*100);
-  const h = Math.round(humidity*100);
-  const advertData = {
-    0x2A6E: [t&255,t>>8],
-    0x2A6F: [h&255,h>>8],
-  };
-  NRF.setAdvertising(advertData);
-
   g.clear();
   g.setFont("6x8");
   g.drawString('eCO2 : ' + data.eCO2, 0, 0);
   g.drawString('TVOC : ' + data.TVOC, 0, 10);
-  g.drawString('temp : ' + t / 100.0, 0, 20);
-  g.drawString('hmdty: ' + h / 100.0, 0, 30);
+  g.drawString('temp : ' + temperature, 0, 20);
+  g.drawString('hmdty: ' + humidity, 0, 30);
   g.drawString('pm2.5: ' + pmData.pm25, 0, 40);
   g.drawString('pm10 : ' + pmData.pm10, 0, 50);
   g.flip();
 
-  const littleEndian = (value) => {
-    return [value&255, value>>8];
+  // Bluetooth spec says data is 16 bits, 0.01/unit - so x100
+  const t = Math.round(temperature*100);
+  const h = Math.round(humidity*100);
+  const advertData = {
+    0x2A6E: littleEndian(t),
+    0x2A6F: littleEndian(h),
   };
+  NRF.setAdvertising(advertData);
 
   const serviceData = {
     0x181A: { // org.bluetooth.descriptor.es_measurement
