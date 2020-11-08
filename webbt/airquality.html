@@ -96,6 +96,27 @@
     let characteristic = null;
     let ctx = null;
     let chart = null;
+  </script>
+</head>
+
+<body>
+  <div style="width:720px; margin:auto;">
+    <center>
+      <button onclick="connectAndSubscribe(this)" id="connectButton">
+        Connect to device
+      </button>
+      <button onclick="disconnect(this)" disabled id="disconnectButton">
+        Disconnect from device
+      </button>
+    </center>
+    <canvas id="myChart" style="display: block; width: 720px; height: 480px;" width="720" height="480"></canvas>
+  </div>
+
+  <script>
+    ctx = document.getElementById('myChart').getContext('2d');
+    chart = new Chart(ctx, chartConfig);
+    const connectButton = document.getElementById('connectButton');
+    const disconnectButton = document.getElementById('disconnectButton');
 
     const connectAndSubscribe = async(e) => {
       try {
@@ -122,9 +143,21 @@
             )
           );
         });
+
+        connectButton.disabled = true;
+        disconnectButton.disabled = false;
       } catch(err) {
         console.error({err});
       }
+    };
+
+    const onDisconnected = (event) => {
+      device = null;
+      characteristic = null;
+      connectButton.disabled = false;
+      disconnectButton.disabled = true;
+
+      console.log("disconnected!");
     };
 
     const handleCharacteristicValueChanged = (name) => (event) => {
@@ -142,30 +175,6 @@
     const disconnect = async(e) => {
       if (device && device.gatt.connected) device.gatt.disconnect();
     };
-
-    const onDisconnected = (event) => {
-      device = null;
-      characteristic = null;
-      console.log("disconnected!");
-    };
-  </script>
-</head>
-
-<body>
-  <button onclick="connectAndSubscribe(this)">
-    Connect to device
-  </button>
-  <button onclick="disconnect(this)">
-    Disconnect from device
-  </button>
-
-  <div style="width:720px; margin:auto;">
-    <canvas id="myChart" style="display: block; width: 720px; height: 480px;" width="720" height="480"></canvas>
-  </div>
-
-  <script>
-    ctx = document.getElementById('myChart').getContext('2d');
-    chart = new Chart(ctx, chartConfig);
   </script>
 </body>
 
