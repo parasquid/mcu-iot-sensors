@@ -47,8 +47,8 @@
           xAxes: [{
             type: 'realtime',
             realtime: {
-              duration: 15000,
-              delay: 2000,
+              duration: 50000,
+              delay: 500,
             }
           }],
           yAxes: [{
@@ -100,7 +100,7 @@
 </head>
 
 <body>
-  <div style="width:720px; margin:auto;">
+  <div style="width:auto; margin:auto;">
     <center>
       <button onclick="connectAndSubscribe(this)" id="connectButton">
         Connect to device
@@ -109,7 +109,7 @@
         Disconnect from device
       </button>
     </center>
-    <canvas id="myChart" style="display: block; width: 720px; height: 480px;" width="720" height="480"></canvas>
+    <canvas id="myChart" style="display: block; width: auto; height: 480px;" width="auto" height="480"></canvas>
   </div>
 
   <script>
